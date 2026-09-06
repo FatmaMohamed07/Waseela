@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مبادرة وسيلة | Wasila</title>
+    <title>وسيلة | Wasila</title>
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -19,13 +19,13 @@
     <style>
         :root {
             --primary-green: #1B3B2B;   /* الأخضر الزيتي */
-            --accent-pink: #E08A9D;      /* الوردي */
-            --light-pink: #F7E5EC;       /* وردي فاتح */
-            --gold-accent: #C5A059;      /* ذهبي هادئ */
-            --bg-cream: #FAF8F5;         /* خلفية كريمي */
+            --accent-gold: #D4AF37;     /* الذهبي الرئيسي */
+            --light-gold: #FDFBF2;      /* ذهبي فاتح جداً للخلفيات */
+            --gold-border: #C5A059;     /* إطارات ورتوش ذهبية */
+            --bg-cream: #FAF8F5;         /* خلفية كريمي هادئة */
             --card-bg: #FFFFFF;
-            --text-dark: #2C3E35;
-            --text-muted: #66706A;
+            --text-dark: #1F2D24;
+            --text-muted: #55605A;
             --danger-red: #d9534f;
         }
 
@@ -49,7 +49,7 @@
             position: sticky;
             top: 0;
             z-index: 1000;
-            border-bottom: 3px solid var(--accent-pink);
+            border-bottom: 3px solid var(--accent-gold);
         }
 
         .navbar {
@@ -73,6 +73,7 @@
             width: 55px;
             border-radius: 50%;
             object-fit: cover;
+            border: 2px solid var(--accent-gold);
         }
 
         .logo-text {
@@ -97,18 +98,24 @@
         }
 
         .nav-links a:hover {
-            color: var(--accent-pink);
+            color: var(--accent-gold);
         }
 
         .btn-admin-login {
             background-color: transparent;
-            border: 1px solid var(--accent-pink);
+            border: 1px solid var(--accent-gold);
             color: var(--primary-green);
             padding: 6px 14px;
             border-radius: 20px;
             cursor: pointer;
             font-weight: bold;
             font-size: 0.85rem;
+            transition: all 0.3s;
+        }
+
+        .btn-admin-login:hover {
+            background-color: var(--accent-gold);
+            color: white;
         }
 
         .btn-admin-logout {
@@ -129,12 +136,13 @@
             color: white;
             padding: 4rem 2rem;
             text-align: center;
+            border-bottom: 2px solid var(--accent-gold);
         }
 
         .hero h1 {
             font-family: 'Amiri', serif;
             font-size: 3.2rem;
-            color: var(--accent-pink);
+            color: var(--accent-gold);
             margin-bottom: 1rem;
         }
 
@@ -170,7 +178,7 @@
             display: block;
             width: 60%;
             height: 3px;
-            background: var(--accent-pink);
+            background: var(--accent-gold);
             margin: 8px auto 0;
             border-radius: 2px;
         }
@@ -179,7 +187,7 @@
         .add-panel {
             display: none; /* مخفي للزوار */
             background: white;
-            border: 2px dashed var(--accent-pink);
+            border: 2px dashed var(--accent-gold);
             border-radius: 12px;
             padding: 2rem;
             margin-bottom: 3rem;
@@ -217,6 +225,12 @@
             font-weight: bold;
             grid-column: 1 / -1;
             font-size: 1rem;
+            border: 1px solid var(--accent-gold);
+        }
+
+        .btn-submit:hover {
+            background-color: var(--accent-gold);
+            color: var(--primary-green);
         }
 
         /* --- Grid & Cards --- */
@@ -231,19 +245,20 @@
             border-radius: 12px;
             overflow: hidden;
             box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            border: 1px solid rgba(224, 138, 157, 0.2);
+            border: 1px solid rgba(212, 175, 55, 0.3);
             transition: transform 0.3s;
             position: relative;
         }
 
         .card:hover {
             transform: translateY(-5px);
+            border-color: var(--accent-gold);
         }
 
         .card-img-container {
             position: relative;
             height: 220px;
-            background-color: var(--light-pink);
+            background-color: var(--light-gold);
         }
 
         .card-img {
@@ -261,7 +276,8 @@
             font-size: 0.85rem;
             font-weight: bold;
             background-color: var(--primary-green);
-            color: white;
+            color: var(--accent-gold);
+            border: 1px solid var(--accent-gold);
         }
 
         .btn-delete-card {
@@ -296,7 +312,7 @@
 
         .added-by {
             font-size: 0.85rem;
-            color: var(--accent-pink);
+            color: var(--gold-border);
             font-weight: bold;
             margin-top: 8px;
             display: block;
@@ -304,12 +320,12 @@
 
         /* --- About Section --- */
         .about-section {
-            background-color: var(--light-pink);
+            background-color: var(--light-gold);
             border-radius: 15px;
             padding: 2.5rem;
             margin-bottom: 3.5rem;
             text-align: center;
-            border: 1px dashed var(--accent-pink);
+            border: 1px dashed var(--accent-gold);
         }
 
         .about-section p {
@@ -317,6 +333,7 @@
             max-width: 850px;
             margin: 0 auto;
             color: var(--primary-green);
+            font-weight: 500;
         }
 
         /* --- Wallet Box --- */
@@ -327,7 +344,7 @@
             border-radius: 12px;
             display: inline-block;
             margin-top: 1.5rem;
-            border: 2px solid var(--accent-pink);
+            border: 2px solid var(--accent-gold);
         }
 
         .wallet-number {
@@ -341,8 +358,9 @@
         }
 
         .copy-btn {
-            background: var(--accent-pink);
-            color: white;
+            background: var(--accent-gold);
+            color: var(--primary-green);
+            font-weight: bold;
             border: none;
             padding: 5px 12px;
             border-radius: 6px;
@@ -368,6 +386,7 @@
             width: 90%;
             max-width: 400px;
             position: relative;
+            border: 2px solid var(--accent-gold);
         }
 
         .close-modal {
@@ -385,6 +404,7 @@
             color: white;
             padding: 3rem 2rem;
             margin-top: 3rem;
+            border-top: 3px solid var(--accent-gold);
         }
 
         .contact-buttons {
@@ -414,6 +434,7 @@
             text-align: center;
             padding: 1rem;
             font-size: 0.9rem;
+            border-top: 1px solid var(--gold-border);
         }
     </style>
 </head>
@@ -440,7 +461,7 @@
 
     <!-- Hero Section -->
     <section class="hero">
-        <h1>مبادرة وسيلة</h1>
+        <h1>وسيلة</h1>
         <p>خيرٌ مستمر بأيادٍ شابة.. نبتغي بها الوسيلة إلى الله عز وجل ونعمل على توثيق وإيصال الصدقات والأجهزة للمستحقين.</p>
     </section>
 
@@ -470,7 +491,7 @@
         <!-- About Section -->
         <section id="about" class="about-section">
             <h2 style="font-family: 'Amiri', serif; color: var(--primary-green); margin-bottom: 1rem;">من نحن؟</h2>
-            <p>إحنا مجموعة من الطلبة بنحاول نساعد ونضمن إن الصدقات توصل للمستحقين والأماكن الأكثر احتياجاً قدر المستطاع، وبنوثق كل جهاز ومستلزمات قبل وبعد تسليمها لضمان الشفافية الكاملة.</p>
+            <p>احنا مجموعة من الطلبة من دفعة 198 كلية طب قصر العيني بنحاول نساعد فى جمع الصدقات وضمان وصولها للمستحقين وشراء أجهزة كصدقة جارية في المستشفيات .</p>
         </section>
 
         <!-- Equipment Section -->
@@ -498,7 +519,7 @@
 
     <!-- Contact & Donation Section -->
     <section id="contact" class="contact-section">
-        <h2 style="font-family: 'Amiri', serif; font-size: 2rem;">تواصل معنا للمساهمة والاستفسار</h2>
+        <h2 style="font-family: 'Amiri', serif; font-size: 2rem; color: var(--accent-gold);">تواصل معنا للمساهمة والاستفسار</h2>
         
         <div class="contact-buttons">
             <a href="https://chat.whatsapp.com/Dg3aUV5oagv7dkBCY1D5Ad?s=cl&p=a&mlu=4&ilr=4" target="_blank" class="btn btn-whatsapp"><i class="fab fa-whatsapp"></i> جروب الواتساب</a>
@@ -513,7 +534,7 @@
     </section>
 
     <footer>
-        <p>جميع الحقوق محفوظة لمبادرة وسيلة &copy; 2026</p>
+        <p>جميع الحقوق محفوظة لـ وسيلة &copy; 2026</p>
     </footer>
 
     <!-- JavaScript & Supabase Logic -->

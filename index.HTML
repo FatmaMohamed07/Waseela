@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مبادرة وسيلة | Wasila</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Supabase JS Library CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        :root {
+            --primary-green: #1B3B2B;   /* الأخضر الزيتي */
+            --accent-pink: #E08A9D;      /* الوردي */
+            --light-pink: #F7E5EC;       /* وردي فاتح */
+            --gold-accent: #C5A059;      /* ذهبي هادئ */
+            --bg-cream: #FAF8F5;         /* خلفية كريمي */
+            --card-bg: #FFFFFF;
+            --text-dark: #2C3E35;
+            --text-muted: #66706A;
+            --danger-red: #d9534f;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Tajawal', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-cream);
+            color: var(--text-dark);
+            line-height: 1.6;
+        }
+
+        /* --- Header --- */
+        header {
+            background-color: var(--card-bg);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 3px solid var(--accent-pink);
+        }
+
+        .navbar {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0.8rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+
+        .logo-img {
+            height: 55px;
+            width: 55px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .logo-text {
+            font-family: 'Amiri', serif;
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary-green);
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 1.5rem;
+            align-items: center;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-dark);
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: var(--accent-pink);
+        }
+
+        .btn-admin-login {
+            background-color: transparent;
+            border: 1px solid var(--accent-pink);
+            color: var(--primary-green);
+            padding: 6px 14px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.85rem;
+        }
+
+        .btn-admin-logout {
+            background-color: var(--danger-red);
+            border: none;
+            color: white;
+            padding: 6px 14px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.85rem;
+            display: none;
+        }
+
+        /* --- Hero --- */
+        .hero {
+            background: linear-gradient(135deg, var(--primary-green) 0%, #0F2319 100%);
+            color: white;
+            padding: 4rem 2rem;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-family: 'Amiri', serif;
+            font-size: 3.2rem;
+            color: var(--accent-pink);
+            margin-bottom: 1rem;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            max-width: 750px;
+            margin: 0 auto;
+            opacity: 0.95;
+        }
+
+        /* --- Main Layout --- */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .section-title h2 {
+            font-family: 'Amiri', serif;
+            font-size: 2.2rem;
+            color: var(--primary-green);
+            display: inline-block;
+            position: relative;
+        }
+
+        .section-title h2::after {
+            content: '';
+            display: block;
+            width: 60%;
+            height: 3px;
+            background: var(--accent-pink);
+            margin: 8px auto 0;
+            border-radius: 2px;
+        }
+
+        /* --- Admin Panel Form (Hidden for guests) --- */
+        .add-panel {
+            display: none; /* مخفي للزوار */
+            background: white;
+            border: 2px dashed var(--accent-pink);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .add-panel h3 {
+            color: var(--primary-green);
+            margin-bottom: 1.5rem;
+            font-family: 'Amiri', serif;
+            font-size: 1.8rem;
+        }
+
+        .admin-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .admin-form input, .admin-form select, .admin-form textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-family: 'Tajawal', sans-serif;
+        }
+
+        .btn-submit {
+            background-color: var(--primary-green);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            grid-column: 1 / -1;
+            font-size: 1rem;
+        }
+
+        /* --- Grid & Cards --- */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border: 1px solid rgba(224, 138, 157, 0.2);
+            transition: transform 0.3s;
+            position: relative;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card-img-container {
+            position: relative;
+            height: 220px;
+            background-color: var(--light-pink);
+        }
+
+        .card-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            background-color: var(--primary-green);
+            color: white;
+        }
+
+        .btn-delete-card {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            background-color: var(--danger-red);
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: bold;
+            display: none; /* يظهر للأدمن فقط */
+        }
+
+        .card-content {
+            padding: 1.5rem;
+        }
+
+        .card-content h3 {
+            color: var(--primary-green);
+            margin-bottom: 0.5rem;
+        }
+
+        .card-content p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .added-by {
+            font-size: 0.85rem;
+            color: var(--accent-pink);
+            font-weight: bold;
+            margin-top: 8px;
+            display: block;
+        }
+
+        /* --- About Section --- */
+        .about-section {
+            background-color: var(--light-pink);
+            border-radius: 15px;
+            padding: 2.5rem;
+            margin-bottom: 3.5rem;
+            text-align: center;
+            border: 1px dashed var(--accent-pink);
+        }
+
+        .about-section p {
+            font-size: 1.15rem;
+            max-width: 850px;
+            margin: 0 auto;
+            color: var(--primary-green);
+        }
+
+        /* --- Wallet Box --- */
+        .wallet-box {
+            background: white;
+            color: var(--primary-green);
+            padding: 1.2rem;
+            border-radius: 12px;
+            display: inline-block;
+            margin-top: 1.5rem;
+            border: 2px solid var(--accent-pink);
+        }
+
+        .wallet-number {
+            font-size: 1.4rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+            color: var(--primary-green);
+            direction: ltr;
+            display: inline-block;
+            margin: 0 10px;
+        }
+
+        .copy-btn {
+            background: var(--accent-pink);
+            color: white;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+
+        /* --- Modal Login --- */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+            position: relative;
+        }
+
+        .close-modal {
+            position: absolute;
+            left: 15px;
+            top: 15px;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+
+        /* --- Footer & Contact --- */
+        .contact-section {
+            text-align: center;
+            background: var(--primary-green);
+            color: white;
+            padding: 3rem 2rem;
+            margin-top: 3rem;
+        }
+
+        .contact-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0.8rem 1.8rem;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .btn-whatsapp { background-color: #25D366; color: white; }
+        .btn-telegram { background-color: #0088cc; color: white; }
+
+        footer {
+            background-color: #0F2319;
+            color: rgba(255,255,255,0.7);
+            text-align: center;
+            padding: 1rem;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <nav class="navbar">
+            <div class="logo-container">
+                <img src="logo.jpg" alt="لوجو وسيلة" class="logo-img" onerror="if(this.src.endsWith('logo.jpg')){this.src='logo.jpg.jpeg';} else if(this.src.endsWith('logo.jpg.jpeg')){this.src='logo.jpeg';}">
+                <span class="logo-text">وسيلة</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#about">من نحن</a></li>
+                <li><a href="#equipment">الأجهزة والمستلزمات</a></li>
+                <li><a href="#contact">تواصل معنا</a></li>
+                <li>
+                    <button id="btn-login-trigger" class="btn-admin-login" onclick="openLoginModal()"><i class="fa-solid fa-lock"></i> دخول الأدمن</button>
+                    <button id="btn-logout" class="btn-admin-logout" onclick="handleLogout()"><i class="fa-solid fa-sign-out-alt"></i> خروج</button>
+                </li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <h1>مبادرة وسيلة</h1>
+        <p>خيرٌ مستمر بأيادٍ شابة.. نبتغي بها الوسيلة إلى الله عز وجل ونعمل على توثيق وإيصال الصدقات والأجهزة للمستحقين.</p>
+    </section>
+
+    <div class="container">
+
+        <!-- Admin Control Panel (Visible only when logged in) -->
+        <div id="add-device" class="add-panel">
+            <h3><i class="fa-solid fa-user-shield"></i> لوحة إضافة توثيق جديد (خاصة بالأدمن)</h3>
+            <form id="add-item-form" class="admin-form" onsubmit="handleAddItem(event)">
+                <input type="text" id="item-added-by" placeholder="اسم الأدمن الناشر" required>
+                <input type="text" id="item-title" placeholder="اسم الجهاز / المستلزمات" required>
+                <input type="text" id="item-sub" placeholder="اسم المستشفى أو الجهة المستقبلة" required>
+                
+                <select id="item-status">
+                    <option value="تم التسليم والتوثيق">تم التسليم والتوثيق</option>
+                    <option value="قيد التجهيز">قيد التجهيز</option>
+                    <option value="قبل التوزيع">قبل التوزيع</option>
+                </select>
+
+                <input type="file" id="item-image" accept="image/*" required style="grid-column: 1 / -1;">
+                <textarea id="item-desc" placeholder="تفاصيل أو ملاحظات إضافية (اختياري)" rows="3" style="grid-column: 1 / -1;"></textarea>
+
+                <button type="submit" class="btn-submit">نشر الإنجاز الآن</button>
+            </form>
+        </div>
+
+        <!-- About Section -->
+        <section id="about" class="about-section">
+            <h2 style="font-family: 'Amiri', serif; color: var(--primary-green); margin-bottom: 1rem;">من نحن؟</h2>
+            <p>إحنا مجموعة من الطلبة بنحاول نساعد ونضمن إن الصدقات توصل للمستحقين والأماكن الأكثر احتياجاً قدر المستطاع، وبنوثق كل جهاز ومستلزمات قبل وبعد تسليمها لضمان الشفافية الكاملة.</p>
+        </section>
+
+        <!-- Equipment Section -->
+        <section id="equipment">
+            <div class="section-title">
+                <h2>توثيق الأجهزة والمستلزمات</h2>
+            </div>
+            <div class="grid" id="equipment-container"></div>
+        </section>
+
+    </div>
+
+    <!-- Login Modal -->
+    <div id="login-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeLoginModal()">&times;</span>
+            <h3 style="color: var(--primary-green); margin-bottom: 1rem; text-align: center;">تسجيل دخول الأدمن</h3>
+            <form onsubmit="handleLogin(event)" style="display: flex; flex-direction: column; gap: 1rem;">
+                <input type="email" id="login-email" placeholder="البريد الإلكتروني" required style="padding: 10px; border: 1px solid #ccc; border-radius: 6px;">
+                <input type="password" id="login-pass" placeholder="كلمة السر" required style="padding: 10px; border: 1px solid #ccc; border-radius: 6px;">
+                <button type="submit" class="btn-submit">تسجيل الدخول</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Contact & Donation Section -->
+    <section id="contact" class="contact-section">
+        <h2 style="font-family: 'Amiri', serif; font-size: 2rem;">تواصل معنا للمساهمة والاستفسار</h2>
+        
+        <div class="contact-buttons">
+            <a href="https://chat.whatsapp.com/Dg3aUV5oagv7dkBCY1D5Ad?s=cl&p=a&mlu=4&ilr=4" target="_blank" class="btn btn-whatsapp"><i class="fab fa-whatsapp"></i> جروب الواتساب</a>
+            <a href="https://t.me/+m3PPvW8ZLe80NGY0" target="_blank" class="btn btn-telegram"><i class="fab fa-telegram-plane"></i> قناة التيليجرام</a>
+        </div>
+
+        <div class="wallet-box">
+            <span><i class="fa-solid fa-wallet"></i> للتبرع عبر المحفظة الإلكترونية (كاش):</span>
+            <span class="wallet-number" id="wallet-num">01153706795</span>
+            <button class="copy-btn" onclick="copyWallet()"><i class="fa-regular fa-copy"></i> نسخ الرقم</button>
+        </div>
+    </section>
+
+    <footer>
+        <p>جميع الحقوق محفوظة لمبادرة وسيلة &copy; 2026</p>
+    </footer>
+
+    <!-- JavaScript & Supabase Logic -->
+    <script>
+        const SUPABASE_URL = 'https://fpdazrxloeqbdzifrova.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_q7-vpVMJBSIm4lGXsI5LYg_Gd0Op6oY';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let currentUser = null;
+
+        // التحقق من حالة تسجيل الدخول عند فتح الموقع
+        async function checkAuthState() {
+            const { data: { user } } = await _supabase.auth.getUser();
+            currentUser = user;
+            updateUIForAuthStatus();
+            fetchAndRenderAll();
+        }
+
+        function updateUIForAuthStatus() {
+            const addPanel = document.getElementById('add-device');
+            const loginBtn = document.getElementById('btn-login-trigger');
+            const logoutBtn = document.getElementById('btn-logout');
+
+            if (currentUser) {
+                addPanel.style.display = 'block';
+                loginBtn.style.display = 'none';
+                logoutBtn.style.display = 'inline-block';
+            } else {
+                addPanel.style.display = 'none';
+                loginBtn.style.display = 'inline-block';
+                logoutBtn.style.display = 'none';
+            }
+        }
+
+        // جلب وعرض الأجهزة
+        async function fetchAndRenderAll() {
+            const { data: equipData, error } = await _supabase
+                .from('equipment')
+                .select('*')
+                .order('created_at', { ascending: false });
+                
+            if (error) {
+                console.error('Error fetching data:', error);
+                return;
+            }
+            renderEquipment(equipData || []);
+        }
+
+        function renderEquipment(items) {
+            const container = document.getElementById('equipment-container');
+            if (items.length === 0) {
+                container.innerHTML = '<p style="text-align:center; grid-column: 1/-1; color: var(--text-muted);">لا توجد أجهزة موثقة حالياً.</p>';
+                return;
+            }
+
+            container.innerHTML = items.map(item => `
+                <div class="card">
+                    <div class="card-img-container">
+                        <img src="${item.image_url}" class="card-img" alt="${item.title}">
+                        <span class="badge">${item.status || 'تم التوثيق'}</span>
+                        ${currentUser ? `<button class="btn-delete-card" style="display:block;" onclick="deleteItem('${item.id}')"><i class="fa-solid fa-trash"></i> حذف</button>` : ''}
+                    </div>
+                    <div class="card-content">
+                        <h3>${item.title}</h3>
+                        <p><i class="fas fa-hospital"></i> <strong>المكان:</strong> ${item.hospital || 'غير محدد'}</p>
+                        ${item.description ? `<p>${item.description}</p>` : ''}
+                        <span class="added-by"><i class="fa-solid fa-user-pen"></i> بواسطة: ${item.added_by || 'عضو بـ وسيلة'}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // إضافة جهاز جديد
+        async function handleAddItem(e) {
+            e.preventDefault();
+
+            if (!currentUser) return alert('يجب تسجيل الدخول كأدمن أولاً');
+
+            const added_by = document.getElementById('item-added-by').value;
+            const title = document.getElementById('item-title').value;
+            const hospital = document.getElementById('item-sub').value;
+            const status = document.getElementById('item-status').value;
+            const description = document.getElementById('item-desc').value;
+            const fileInput = document.getElementById('item-image').files[0];
+
+            if (!fileInput) return alert('برجاء اختيار صورة التوثيق');
+
+            try {
+                const fileName = `${Date.now()}_${fileInput.name}`;
+                const { data: uploadData, error: uploadErr } = await _supabase.storage.from('wasila-images').upload(fileName, fileInput);
+                if (uploadErr) throw uploadErr;
+
+                const { data: urlData } = _supabase.storage.from('wasila-images').getPublicUrl(fileName);
+                const imageUrl = urlData.publicUrl;
+
+                const { error: insertErr } = await _supabase.from('equipment').insert([{ 
+                    title, 
+                    hospital, 
+                    status, 
+                    description,
+                    added_by,
+                    image_url: imageUrl 
+                }]);
+
+                if (insertErr) throw insertErr;
+
+                alert('تم نشر التوثيق بنجاح!');
+                document.getElementById('add-item-form').reset();
+                fetchAndRenderAll();
+            } catch (err) {
+                alert('حدث خطأ أثناء الحفظ: ' + err.message);
+            }
+        }
+
+        // حذف جهاز
+        async function deleteItem(id) {
+            if (!confirm('هل أنتِ متأكدة من حذف هذا التوثيق؟')) return;
+
+            const { error } = await _supabase.from('equipment').delete().eq('id', id);
+            if (error) {
+                alert('حدث خطأ أثناء الحذف: ' + error.message);
+            } else {
+                alert('تم الحذف بنجاح');
+                fetchAndRenderAll();
+            }
+        }
+
+        // تسجيل الدخول والخروج
+        async function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-pass').value;
+
+            const { data, error } = await _supabase.auth.signInWithPassword({ email, password });
+
+            if (error) {
+                alert('خطأ في بيانات الدخول: ' + error.message);
+            } else {
+                currentUser = data.user;
+                closeLoginModal();
+                updateUIForAuthStatus();
+                fetchAndRenderAll();
+                alert('تم تسجيل الدخول بنجاح كأدمن!');
+            }
+        }
+
+        async function handleLogout() {
+            await _supabase.auth.signOut();
+            currentUser = null;
+            updateUIForAuthStatus();
+            fetchAndRenderAll();
+            alert('تم تسجيل الخروج');
+        }
+
+        function openLoginModal() { document.getElementById('login-modal').style.display = 'flex'; }
+        function closeLoginModal() { document.getElementById('login-modal').style.display = 'none'; }
+
+        function copyWallet() {
+            const walletNum = document.getElementById('wallet-num').innerText;
+            navigator.clipboard.writeText(walletNum).then(() => {
+                alert('تم نسخ رقم المحفظة: ' + walletNum);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', checkAuthState);
+    </script>
+</body>
+</html>

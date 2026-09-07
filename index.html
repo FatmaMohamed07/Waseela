@@ -429,22 +429,25 @@
             z-index: 10;
         }
 
-        /* --- Image Gallery / Slider --- */
+        /* --- Image/Video Gallery / Slider --- */
         .gallery-container {
             position: relative;
             margin: 1rem 0;
             width: 100%;
             height: 320px;
-            background-color: #f0f0f0;
+            background-color: #000;
             border-radius: 8px;
             overflow: hidden;
             border: 1px solid var(--accent-gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .gallery-slide {
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            object-fit: contain;
             display: none;
         }
 
@@ -456,7 +459,7 @@
             position: absolute;
             top: 50%;
             transform: translateY(-50%);
-            background: rgba(27, 59, 43, 0.7);
+            background: rgba(27, 59, 43, 0.8);
             color: white;
             border: none;
             padding: 10px 15px;
@@ -464,6 +467,7 @@
             font-size: 1.2rem;
             border-radius: 4px;
             transition: background 0.3s;
+            z-index: 12;
         }
 
         .gallery-btn:hover {
@@ -483,6 +487,7 @@
             padding: 2px 10px;
             border-radius: 12px;
             font-size: 0.85rem;
+            z-index: 12;
         }
 
         /* --- Footer & Contact --- */
@@ -575,8 +580,8 @@
                         <input type="file" id="item-main-image" accept="image/*" required>
                     </div>
                     <div class="file-input-box">
-                        <label><i class="fa-solid fa-images"></i> صور التفاصيل (يمكنك تحديد أكثر من صورة):</label>
-                        <input type="file" id="item-detail-images" accept="image/*" multiple required>
+                        <label><i class="fa-solid fa-photo-film"></i> صور / فيديوهات التفاصيل (يمكن تحديد أكثر من ملف):</label>
+                        <input type="file" id="item-detail-images" accept="image/*,video/*" multiple required>
                     </div>
                 </div>
 
@@ -615,7 +620,7 @@
         </div>
     </div>
 
-    <!-- Details Modal (مع معرض صور متعددة) -->
+    <!-- Details Modal (مع معرض صور وفيديوهات) -->
     <div id="detail-modal" class="modal">
         <div class="modal-content">
             <span class="close-modal" onclick="closeDetailModal()">&times;</span>
@@ -624,7 +629,7 @@
             
             <!-- Gallery Container -->
             <div class="gallery-container" id="gallery-container">
-                <div id="gallery-slides"></div>
+                <div id="gallery-slides" style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;"></div>
                 <button class="gallery-btn prev" onclick="changeSlide(-1)"><i class="fa-solid fa-chevron-right"></i></button>
                 <button class="gallery-btn next" onclick="changeSlide(1)"><i class="fa-solid fa-chevron-left"></i></button>
                 <div class="gallery-counter" id="gallery-counter">1 / 1</div>
@@ -663,7 +668,7 @@
 
         let currentUser = null;
         let currentSlideIndex = 0;
-        let currentDetailImages = [];
+        let currentDetailMedia = [];
 
         window.addEventListener('DOMContentLoaded', () => {
             checkAuthState();
@@ -692,6 +697,13 @@
             }
         }
 
+        // فحص نوع الملف (هل هو فيديو أم صورة)
+        function isVideoUrl(url) {
+            if (!url) return false;
+            const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.avi'];
+            return videoExtensions.some(ext => url.toLowerCase().includes(ext));
+        }
+
         // جلب البيانات وعرض الكروت
         async function fetchAndRenderAll() {
             const container = document.getElementById('equipment-container');
@@ -716,13 +728,16 @@
             equipData.forEach(item => {
                 const mainImg = item.main_image_url || item.image_url;
                 
-                // تجميع كل صور التفاصيل المتوفرة
-                let detailImages = item.detail_images_urls || [];
-                if (detailImages.length === 0 && item.detail_image_url) {
-                    detailImages.push(item.detail_image_url);
+                // تجميع كل وسائط التفاصيل (صور + فيديوهات)
+                let detailMedia = item.detail_images_urls || [];
+                if (item.detail_videos_urls && item.detail_videos_urls.length > 0) {
+                    detailMedia = detailMedia.concat(item.detail_videos_urls);
                 }
-                if (detailImages.length === 0) {
-                    detailImages.push(mainImg);
+                if (detailMedia.length === 0 && item.detail_image_url) {
+                    detailMedia.push(item.detail_image_url);
+                }
+                if (detailMedia.length === 0) {
+                    detailMedia.push(mainImg);
                 }
 
                 const itemDataJson = JSON.stringify({
@@ -730,7 +745,7 @@
                     sub_title: item.sub_title,
                     description: item.description,
                     added_by: item.added_by,
-                    images: detailImages
+                    media: detailMedia
                 }).replace(/'/g, "&apos;").replace(/"/g, "&quot;");
 
                 const card = document.createElement('div');
@@ -746,7 +761,7 @@
                             <h3>${item.title}</h3>
                             <p><i class="fa-solid fa-hospital"></i> ${item.sub_title}</p>
                             <p style="font-size:0.85rem; color:#777; font-style:italic;">
-                                <i class="fa-solid fa-images"></i> اضغط لرؤية التفاصيل والصور (${detailImages.length})
+                                <i class="fa-solid fa-photo-film"></i> اضغط لرؤية التفاصيل والصور/الفيديوهات (${detailMedia.length})
                             </p>
                             <span class="added-by"><i class="fa-solid fa-user"></i> بواسطة: ${item.added_by || 'أدمن وسيلة'}</span>
                         </div>
@@ -757,11 +772,11 @@
             });
         }
 
-        // إضافة جهاز جديد مع رفع عدة صور
+        // إضافة جهاز جديد مع رفع عدة صور وفيديوهات
         async function handleAddItem(e) {
             e.preventDefault();
             const submitBtn = document.getElementById('btn-submit-text');
-            submitBtn.innerText = 'جاري رفع الصور ونشر الإنجاز...';
+            submitBtn.innerText = 'جاري رفع الملفات ونشر الإنجاز...';
             submitBtn.disabled = true;
 
             try {
@@ -774,19 +789,28 @@
                 const mainFile = document.getElementById('item-main-image').files[0];
                 const detailFiles = document.getElementById('item-detail-images').files;
 
-                // 1. رفع الصورة الرئيسية
+                // 1. رفع الصورة الرئيسية للكارت
                 const mainPath = `main_${Date.now()}_${mainFile.name}`;
                 await _supabase.storage.from('waseela-images').upload(mainPath, mainFile);
                 const mainUrl = _supabase.storage.from('waseela-images').getPublicUrl(mainPath).data.publicUrl;
 
-                // 2. رفع قائمة صور التفاصيل المتعددة
-                const uploadedDetailUrls = [];
+                // 2. رفع قائمة ملفات التفاصيل (صور وفيديوهات)
+                const uploadedDetailImages = [];
+                const uploadedDetailVideos = [];
+
                 for (let i = 0; i < detailFiles.length; i++) {
                     const file = detailFiles[i];
-                    const detailPath = `detail_${Date.now()}_${i}_${file.name}`;
-                    await _supabase.storage.from('waseela-images').upload(detailPath, file);
-                    const url = _supabase.storage.from('waseela-images').getPublicUrl(detailPath).data.publicUrl;
-                    uploadedDetailUrls.push(url);
+                    const fileExt = file.name.split('.').pop();
+                    const filePath = `detail_${Date.now()}_${i}.${fileExt}`;
+                    
+                    await _supabase.storage.from('waseela-images').upload(filePath, file);
+                    const url = _supabase.storage.from('waseela-images').getPublicUrl(filePath).data.publicUrl;
+
+                    if (file.type.startsWith('video/')) {
+                        uploadedDetailVideos.push(url);
+                    } else {
+                        uploadedDetailImages.push(url);
+                    }
                 }
 
                 // 3. الحفظ في قاعدة البيانات
@@ -797,14 +821,15 @@
                     description: desc,
                     added_by: addedBy,
                     main_image_url: mainUrl,
-                    detail_image_url: uploadedDetailUrls[0] || mainUrl,
-                    detail_images_urls: uploadedDetailUrls,
+                    detail_image_url: uploadedDetailImages[0] || mainUrl,
+                    detail_images_urls: uploadedDetailImages,
+                    detail_videos_urls: uploadedDetailVideos,
                     image_url: mainUrl
                 }]);
 
                 if (error) throw error;
 
-                alert('تمت إضافة التوثيق وكافة الصور بنجاح!');
+                alert('تمت إضافة التوثيق وكافة الملفات بنجاح!');
                 document.getElementById('add-item-form').reset();
                 fetchAndRenderAll();
 
@@ -827,7 +852,7 @@
             }
         }
 
-        // التحكم في النوافذ المنبثقة ومعرض الصور
+        // التحكم في النوافذ المنبثقة ومعرض الوسائط
         function openLoginModal() { document.getElementById('login-modal').style.display = 'flex'; }
         function closeLoginModal() { document.getElementById('login-modal').style.display = 'none'; }
 
@@ -837,17 +862,25 @@
             document.getElementById('modal-desc').innerText = data.description || 'لا توجد تفاصيل إضافية مكتوبة.';
             document.getElementById('modal-publisher').innerText = 'الموثق: ' + (data.added_by || 'أدمن وسيلة');
 
-            currentDetailImages = data.images || [];
+            currentDetailMedia = data.media || [];
             currentSlideIndex = 0;
 
             const slidesContainer = document.getElementById('gallery-slides');
             slidesContainer.innerHTML = '';
 
-            currentDetailImages.forEach((imgUrl, idx) => {
-                const img = document.createElement('img');
-                img.src = imgUrl;
-                img.className = 'gallery-slide' + (idx === 0 ? ' active' : '');
-                slidesContainer.appendChild(img);
+            currentDetailMedia.forEach((url, idx) => {
+                let el;
+                if (isVideoUrl(url)) {
+                    el = document.createElement('video');
+                    el.src = url;
+                    el.controls = true;
+                    el.className = 'gallery-slide' + (idx === 0 ? ' active' : '');
+                } else {
+                    el = document.createElement('img');
+                    el.src = url;
+                    el.className = 'gallery-slide' + (idx === 0 ? ' active' : '');
+                }
+                slidesContainer.appendChild(el);
             });
 
             updateGalleryControls();
@@ -857,6 +890,11 @@
         function changeSlide(direction) {
             const slides = document.querySelectorAll('.gallery-slide');
             if (slides.length <= 1) return;
+
+            // إيقاف تشغيل الفيديو الحالي إن وجد
+            if (slides[currentSlideIndex].tagName === 'VIDEO') {
+                slides[currentSlideIndex].pause();
+            }
 
             slides[currentSlideIndex].classList.remove('active');
             currentSlideIndex = (currentSlideIndex + direction + slides.length) % slides.length;
@@ -870,9 +908,9 @@
             const prevBtn = document.querySelector('.gallery-btn.prev');
             const nextBtn = document.querySelector('.gallery-btn.next');
 
-            counter.innerText = `${currentSlideIndex + 1} / ${currentDetailImages.length}`;
+            counter.innerText = `${currentSlideIndex + 1} / ${currentDetailMedia.length}`;
 
-            if (currentDetailImages.length <= 1) {
+            if (currentDetailMedia.length <= 1) {
                 prevBtn.style.display = 'none';
                 nextBtn.style.display = 'none';
             } else {
@@ -882,6 +920,11 @@
         }
 
         function closeDetailModal() {
+            // إيقاف أي فيديو عند إغلاق النوافذ
+            const videos = document.querySelectorAll('.gallery-slide');
+            videos.forEach(v => {
+                if (v.tagName === 'VIDEO') v.pause();
+            });
             document.getElementById('detail-modal').style.display = 'none';
         }
 

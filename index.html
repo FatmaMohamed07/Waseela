@@ -704,7 +704,7 @@
             return videoExtensions.some(ext => url.toLowerCase().includes(ext));
         }
 
-        // جلب البيانات وعرض الكروت (محلول فيها مشكلة undefined)
+        // جلب البيانات وعرض الكروت
         async function fetchAndRenderAll() {
             const container = document.getElementById('equipment-container');
             container.innerHTML = '<p style="text-align: center; grid-column: 1/-1;">جاري تحميل البيانات...</p>';
@@ -728,10 +728,10 @@
             equipData.forEach(item => {
                 const mainImg = item.main_image_url || item.image_url;
                 
-                // قراءة اسم المكان/المستشفى مع دعم كل المسميات القديمة لمنع ظهور undefined
-                const hospitalName = item.sub_title || item.hospital || item.subtitle || item.location || 'غير محدد';
+                // قراءة اسم المستشفى من العمود المعرف hospital أو المسميات الأخرى
+                const hospitalName = item.hospital || item.sub_title || item.subtitle || item.location || 'غير محدد';
 
-                // تجميع الوسائط من كل الأعمدة القديمة والحديثة
+                // تجميع الوسائط من الأعمدة
                 let detailMedia = item.detail_images_urls || [];
                 if (item.detail_videos_urls && item.detail_videos_urls.length > 0) {
                     detailMedia = detailMedia.concat(item.detail_videos_urls);
@@ -775,7 +775,7 @@
             });
         }
 
-        // إضافة جهاز جديد (محلول فيها مشكلة image_url)
+        // إضافة جهاز جديد (تمت إزالة sub_title لمنع الخطأ)
         async function handleAddItem(e) {
             e.preventDefault();
             const submitBtn = document.getElementById('btn-submit-text');
@@ -816,10 +816,9 @@
                     }
                 }
 
-                // 3. الحفظ في قاعدة البيانات بإرسال القيمة لكافة الأعمدة المتوقعة
+                // 3. الحفظ في قاعدة البيانات بدون عمود sub_title
                 const { error } = await _supabase.from('equipment').insert([{
                     title: title,
-                    sub_title: sub,
                     hospital: sub,
                     status: status,
                     description: desc,

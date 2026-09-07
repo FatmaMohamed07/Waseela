@@ -822,7 +822,7 @@
                     }
                 }
 
-                // 3. الحفظ في قاعدة البيانات بدون عمود sub_title
+                // 3. الحفظ في قاعدة البيانات
                 const { error } = await _supabase.from('equipment').insert([{
                     title: title,
                     hospital: sub,
@@ -850,25 +850,33 @@
             }
         }
 
-        // حذف جهاز (محدثة ومباشرة)
+        // دالة الحذف المُحدثة لمعالجة أي خطأ وتفاديه
         async function deleteEquipment(id) {
             if (!confirm('هل أنت متأكد من حذف هذا التوثيق؟')) return;
 
             try {
-                const { error } = await _supabase
+                const { data, error } = await _supabase
                     .from('equipment')
                     .delete()
-                    .eq('id', id);
+                    .eq('id', Number(id))
+                    .select();
 
                 if (error) {
-                    console.error('Delete error:', error);
-                    alert('فشل الحذف: ' + error.message);
+                    console.error('تفاصيل خطأ الحذف:', error);
+                    alert('لم يتم الحذف بسبب خطأ من قاعدة البيانات:\n' + error.message);
+                    return;
+                }
+
+                if (data && data.length > 0) {
+                    alert('تم الحذف بنجاح!');
+                    fetchAndRenderAll();
                 } else {
-                    alert('تم الحذف بنجاح');
+                    alert('لم يتم إيجاد العنصر لتأكيد حذفه، قد يكون حُذف بالفعل أو رقم ID غير مطابق.');
                     fetchAndRenderAll();
                 }
             } catch (err) {
-                alert('حدث خطأ غير متوقع: ' + err.message);
+                console.error('خطأ غير متوقع:', err);
+                alert('حدث خطأ أثناء الاتصال: ' + err.message);
             }
         }
 

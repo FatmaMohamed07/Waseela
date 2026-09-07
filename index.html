@@ -429,7 +429,7 @@
             z-index: 10;
         }
 
-        /* --- Image/Video Gallery / Slider --- */
+        /* --- Gallery Slider --- */
         .gallery-container {
             position: relative;
             margin: 1rem 0;
@@ -620,7 +620,7 @@
         </div>
     </div>
 
-    <!-- Details Modal (مع معرض صور وفيديوهات) -->
+    <!-- Details Modal -->
     <div id="detail-modal" class="modal">
         <div class="modal-content">
             <span class="close-modal" onclick="closeDetailModal()">&times;</span>
@@ -660,7 +660,7 @@
         <p>جميع الحقوق محفوظة لـ وسيلة &copy; 2026</p>
     </footer>
 
-    <!-- JavaScript & Supabase Logic -->
+    <!-- JavaScript Logic -->
     <script>
         const SUPABASE_URL = 'https://fpdazrxloeqbdzifrova.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_q7-vpVMJBSIm4lGXsI5LYg_Gd0Op6oY';
@@ -697,14 +697,14 @@
             }
         }
 
-        // فحص نوع الملف (هل هو فيديو أم صورة)
+        // فحص هل رابط الملف فيديو أم صورة
         function isVideoUrl(url) {
             if (!url) return false;
             const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.avi'];
             return videoExtensions.some(ext => url.toLowerCase().includes(ext));
         }
 
-        // جلب البيانات وعرض الكروت
+        // جلب البيانات وعرض الكروت (محلول فيها مشكلة undefined)
         async function fetchAndRenderAll() {
             const container = document.getElementById('equipment-container');
             container.innerHTML = '<p style="text-align: center; grid-column: 1/-1;">جاري تحميل البيانات...</p>';
@@ -728,7 +728,10 @@
             equipData.forEach(item => {
                 const mainImg = item.main_image_url || item.image_url;
                 
-                // تجميع كل وسائط التفاصيل (صور + فيديوهات)
+                // قراءة اسم المكان/المستشفى مع دعم كل المسميات القديمة لمنع ظهور undefined
+                const hospitalName = item.sub_title || item.hospital || item.subtitle || item.location || 'غير محدد';
+
+                // تجميع الوسائط من كل الأعمدة القديمة والحديثة
                 let detailMedia = item.detail_images_urls || [];
                 if (item.detail_videos_urls && item.detail_videos_urls.length > 0) {
                     detailMedia = detailMedia.concat(item.detail_videos_urls);
@@ -736,13 +739,13 @@
                 if (detailMedia.length === 0 && item.detail_image_url) {
                     detailMedia.push(item.detail_image_url);
                 }
-                if (detailMedia.length === 0) {
+                if (detailMedia.length === 0 && mainImg) {
                     detailMedia.push(mainImg);
                 }
 
                 const itemDataJson = JSON.stringify({
                     title: item.title,
-                    sub_title: item.sub_title,
+                    sub_title: hospitalName,
                     description: item.description,
                     added_by: item.added_by,
                     media: detailMedia
@@ -755,13 +758,13 @@
                     <div onclick='openDetailModal(${itemDataJson})'>
                         <div class="card-img-container">
                             <img src="${mainImg}" alt="${item.title}" class="card-img">
-                            <span class="badge">${item.status || 'تم التسليم'}</span>
+                            <span class="badge">${item.status || 'تم التسليم والتوثيق'}</span>
                         </div>
                         <div class="card-content">
                             <h3>${item.title}</h3>
-                            <p><i class="fa-solid fa-hospital"></i> ${item.sub_title}</p>
+                            <p><i class="fa-solid fa-hospital"></i> ${hospitalName}</p>
                             <p style="font-size:0.85rem; color:#777; font-style:italic;">
-                                <i class="fa-solid fa-photo-film"></i> اضغط لرؤية التفاصيل والصور/الفيديوهات (${detailMedia.length})
+                                <i class="fa-solid fa-photo-film"></i> اضغط لرؤية التفاصيل والتغطية (${detailMedia.length})
                             </p>
                             <span class="added-by"><i class="fa-solid fa-user"></i> بواسطة: ${item.added_by || 'أدمن وسيلة'}</span>
                         </div>
@@ -772,7 +775,7 @@
             });
         }
 
-        // إضافة جهاز جديد مع رفع عدة صور وفيديوهات
+        // إضافة جهاز جديد (محلول فيها مشكلة image_url)
         async function handleAddItem(e) {
             e.preventDefault();
             const submitBtn = document.getElementById('btn-submit-text');
@@ -789,12 +792,12 @@
                 const mainFile = document.getElementById('item-main-image').files[0];
                 const detailFiles = document.getElementById('item-detail-images').files;
 
-                // 1. رفع الصورة الرئيسية للكارت
+                // 1. رفع الصورة الرئيسية
                 const mainPath = `main_${Date.now()}_${mainFile.name}`;
                 await _supabase.storage.from('waseela-images').upload(mainPath, mainFile);
                 const mainUrl = _supabase.storage.from('waseela-images').getPublicUrl(mainPath).data.publicUrl;
 
-                // 2. رفع قائمة ملفات التفاصيل (صور وفيديوهات)
+                // 2. رفع صور وفيديوهات التفاصيل
                 const uploadedDetailImages = [];
                 const uploadedDetailVideos = [];
 
@@ -813,18 +816,19 @@
                     }
                 }
 
-                // 3. الحفظ في قاعدة البيانات
+                // 3. الحفظ في قاعدة البيانات بإرسال القيمة لكافة الأعمدة المتوقعة
                 const { error } = await _supabase.from('equipment').insert([{
                     title: title,
                     sub_title: sub,
+                    hospital: sub,
                     status: status,
                     description: desc,
                     added_by: addedBy,
                     main_image_url: mainUrl,
+                    image_url: mainUrl,
                     detail_image_url: uploadedDetailImages[0] || mainUrl,
                     detail_images_urls: uploadedDetailImages,
-                    detail_videos_urls: uploadedDetailVideos,
-                    image_url: mainUrl
+                    detail_videos_urls: uploadedDetailVideos
                 }]);
 
                 if (error) throw error;
@@ -852,7 +856,7 @@
             }
         }
 
-        // التحكم في النوافذ المنبثقة ومعرض الوسائط
+        // التحكم بالنوافذ المنبثقة ومعرض الصور/الفيديو
         function openLoginModal() { document.getElementById('login-modal').style.display = 'flex'; }
         function closeLoginModal() { document.getElementById('login-modal').style.display = 'none'; }
 
@@ -891,7 +895,6 @@
             const slides = document.querySelectorAll('.gallery-slide');
             if (slides.length <= 1) return;
 
-            // إيقاف تشغيل الفيديو الحالي إن وجد
             if (slides[currentSlideIndex].tagName === 'VIDEO') {
                 slides[currentSlideIndex].pause();
             }
@@ -920,7 +923,6 @@
         }
 
         function closeDetailModal() {
-            // إيقاف أي فيديو عند إغلاق النوافذ
             const videos = document.querySelectorAll('.gallery-slide');
             videos.forEach(v => {
                 if (v.tagName === 'VIDEO') v.pause();

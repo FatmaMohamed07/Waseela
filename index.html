@@ -523,9 +523,10 @@
 
     <header>
         <nav class="navbar">
-            <div class="logo-container">
-                <span class="logo-text"><i class="fa-solid fa-hand-holding-heart" style="color: var(--accent-gold);"></i> وسيلة</span>
-            </div>
+            <a href="#" class="logo-container">
+                <img src="logo.jpg.jpeg" alt="وسيلة" style="height: 45px; width: auto; object-fit: contain; border-radius: 6px;">
+                <span class="logo-text">وسيلة</span>
+            </a>
             <ul class="nav-links">
                 <li><a href="#about">من نحن</a></li>
                 <li><a href="#equipment">الأجهزة والمستلزمات</a></li>
@@ -831,9 +832,6 @@
             }
         }
 
-        // ==========================================
-        // دالة الحذف المعدلة لتناسب UUID
-        // ==========================================
         async function deleteEquipment(id) {
             if (!confirm('هل أنت متأكد من حذف هذا التوثيق؟')) return;
 
@@ -841,7 +839,7 @@
                 const { data, error } = await _supabase
                     .from('equipment')
                     .delete()
-                    .eq('id', String(id)) // تم تحويل ID إلى String ليتوافق مع UUID بدلاً من Number
+                    .eq('id', String(id))
                     .select();
 
                 if (error) {
@@ -899,65 +897,70 @@
             const slidesContainer = document.getElementById('gallery-slides');
             slidesContainer.innerHTML = '';
 
-            currentDetailMedia.forEach((url, idx) => {
-                let el;
-                if (isVideoUrl(url)) {
-                    el = document.createElement('video');
-                    el.src = url;
-                    el.controls = true;
+            if (currentDetailMedia.length === 0) {
+                slidesContainer.innerHTML = '<p style="color:white;">لا تتوفر صور أو فيديوهات للمعرض</p>';
+            } else {
+                currentDetailMedia.forEach((url, idx) => {
+                    let el;
+                    if (isVideoUrl(url)) {
+                        el = document.createElement('video');
+                        el.src = url;
+                        el.controls = true;
+                    } else {
+                        el = document.createElement('img');
+                        el.src = url;
+                        el.alt = data.title;
+                    }
                     el.className = 'gallery-slide' + (idx === 0 ? ' active' : '');
-                } else {
-                    el = document.createElement('img');
-                    el.src = url;
-                    el.className = 'gallery-slide' + (idx === 0 ? ' active' : '');
-                }
-                slidesContainer.appendChild(el);
-            });
+                    slidesContainer.appendChild(el);
+                });
+            }
 
-            updateGalleryControls();
+            updateGalleryUI();
             document.getElementById('detail-modal').style.display = 'flex';
         }
 
         function changeSlide(direction) {
-            const slides = document.querySelectorAll('.gallery-slide');
-            if (slides.length <= 1) return;
+            if (currentDetailMedia.length <= 1) return;
 
-            if (slides[currentSlideIndex].tagName === 'VIDEO') {
+            const slides = document.querySelectorAll('.gallery-slide');
+            if (slides.length === 0) return;
+
+            if (slides[currentSlideIndex].tagName.toLowerCase() === 'video') {
                 slides[currentSlideIndex].pause();
             }
 
             slides[currentSlideIndex].classList.remove('active');
+            
             currentSlideIndex = (currentSlideIndex + direction + slides.length) % slides.length;
+            
             slides[currentSlideIndex].classList.add('active');
-
-            updateGalleryControls();
+            updateGalleryUI();
         }
 
-        function updateGalleryControls() {
+        function updateGalleryUI() {
             const counter = document.getElementById('gallery-counter');
+            const total = currentDetailMedia.length;
+            counter.innerText = total > 0 ? `${currentSlideIndex + 1} / ${total}` : '0 / 0';
+
             const prevBtn = document.querySelector('.gallery-btn.prev');
             const nextBtn = document.querySelector('.gallery-btn.next');
 
-            if (currentDetailMedia.length <= 1) {
+            if (total <= 1) {
                 if (prevBtn) prevBtn.style.display = 'none';
                 if (nextBtn) nextBtn.style.display = 'none';
-                if (counter) counter.style.display = 'none';
             } else {
                 if (prevBtn) prevBtn.style.display = 'block';
                 if (nextBtn) nextBtn.style.display = 'block';
-                if (counter) {
-                    counter.style.display = 'block';
-                    counter.innerText = `${currentSlideIndex + 1} / ${currentDetailMedia.length}`;
-                }
             }
         }
 
         function copyWallet() {
-            const num = document.getElementById('wallet-num').innerText;
-            navigator.clipboard.writeText(num).then(() => {
-                alert('تم نسخ رقم المحفظة بنجاح: ' + num);
+            const numText = document.getElementById('wallet-num').innerText;
+            navigator.clipboard.writeText(numText).then(() => {
+                alert('تم نسخ رقم المحفظة بنجاح: ' + numText);
             }).catch(err => {
-                alert('تعذر النسخ تلقائياً.');
+                alert('تعذر النسخ: ' + err);
             });
         }
     </script>

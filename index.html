@@ -274,7 +274,6 @@
             border: 1px solid rgba(212, 175, 55, 0.3);
             transition: transform 0.3s;
             position: relative;
-            cursor: pointer;
         }
 
         .card:hover {
@@ -286,6 +285,7 @@
             position: relative;
             height: 220px;
             background-color: var(--light-gold);
+            cursor: pointer;
         }
 
         .card-img {
@@ -314,16 +314,22 @@
             background-color: var(--danger-red);
             color: white;
             border: none;
-            padding: 6px 10px;
+            padding: 6px 12px;
             border-radius: 8px;
             cursor: pointer;
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             font-weight: bold;
-            z-index: 10;
+            z-index: 100;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        }
+
+        .btn-delete-card:hover {
+            background-color: #c9302c;
         }
 
         .card-content {
             padding: 1.5rem;
+            cursor: pointer;
         }
 
         .card-content h3 {
@@ -755,6 +761,7 @@
                 card.className = 'card';
                 
                 card.innerHTML = `
+                    ${currentUser ? `<button onclick="deleteEquipment(${item.id})" class="btn-delete-card"><i class="fa-solid fa-trash"></i> حذف</button>` : ''}
                     <div onclick='openDetailModal(${itemDataJson})'>
                         <div class="card-img-container">
                             <img src="${mainImg}" alt="${item.title}" class="card-img">
@@ -769,13 +776,12 @@
                             <span class="added-by"><i class="fa-solid fa-user"></i> بواسطة: ${item.added_by || 'أدمن وسيلة'}</span>
                         </div>
                     </div>
-                    ${currentUser ? `<button onclick="deleteEquipment(${item.id})" class="btn-delete-card"><i class="fa-solid fa-trash"></i> حذف</button>` : ''}
                 `;
                 container.appendChild(card);
             });
         }
 
-        // إضافة جهاز جديد (تمت إزالة sub_title لمنع الخطأ)
+        // إضافة جهاز جديد
         async function handleAddItem(e) {
             e.preventDefault();
             const submitBtn = document.getElementById('btn-submit-text');
@@ -844,14 +850,25 @@
             }
         }
 
-        // حذف جهاز
+        // حذف جهاز (محدثة ومباشرة)
         async function deleteEquipment(id) {
             if (!confirm('هل أنت متأكد من حذف هذا التوثيق؟')) return;
-            const { error } = await _supabase.from('equipment').delete().eq('id', id);
-            if (error) {
-                alert('فشل الحذف: ' + error.message);
-            } else {
-                fetchAndRenderAll();
+
+            try {
+                const { error } = await _supabase
+                    .from('equipment')
+                    .delete()
+                    .eq('id', id);
+
+                if (error) {
+                    console.error('Delete error:', error);
+                    alert('فشل الحذف: ' + error.message);
+                } else {
+                    alert('تم الحذف بنجاح');
+                    fetchAndRenderAll();
+                }
+            } catch (err) {
+                alert('حدث خطأ غير متوقع: ' + err.message);
             }
         }
 

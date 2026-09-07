@@ -831,6 +831,9 @@
             }
         }
 
+        // ==========================================
+        // دالة الحذف المعدلة لتناسب UUID
+        // ==========================================
         async function deleteEquipment(id) {
             if (!confirm('هل أنت متأكد من حذف هذا التوثيق؟')) return;
 
@@ -838,7 +841,7 @@
                 const { data, error } = await _supabase
                     .from('equipment')
                     .delete()
-                    .eq('id', Number(id))
+                    .eq('id', String(id)) // تم تحويل ID إلى String ليتوافق مع UUID بدلاً من Number
                     .select();
 
                 if (error) {
@@ -856,8 +859,33 @@
             }
         }
 
+        async function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-pass').value;
+
+            const { data, error } = await _supabase.auth.signInWithPassword({ email, password });
+
+            if (error) {
+                alert('خطأ في تسجيل الدخول: ' + error.message);
+            } else {
+                currentUser = data.user;
+                closeLoginModal();
+                updateUIForAuthStatus();
+                fetchAndRenderAll();
+            }
+        }
+
+        async function handleLogout() {
+            await _supabase.auth.signOut();
+            currentUser = null;
+            updateUIForAuthStatus();
+            fetchAndRenderAll();
+        }
+
         function openLoginModal() { document.getElementById('login-modal').style.display = 'flex'; }
         function closeLoginModal() { document.getElementById('login-modal').style.display = 'none'; }
+        function closeDetailModal() { document.getElementById('detail-modal').style.display = 'none'; }
 
         function openDetailModal(data) {
             document.getElementById('modal-title').innerText = data.title;
@@ -910,52 +938,27 @@
             const prevBtn = document.querySelector('.gallery-btn.prev');
             const nextBtn = document.querySelector('.gallery-btn.next');
 
-            counter.innerText = `${currentSlideIndex + 1} / ${currentDetailMedia.length}`;
-
             if (currentDetailMedia.length <= 1) {
-                prevBtn.style.display = 'none';
-                nextBtn.style.display = 'none';
+                if (prevBtn) prevBtn.style.display = 'none';
+                if (nextBtn) nextBtn.style.display = 'none';
+                if (counter) counter.style.display = 'none';
             } else {
-                prevBtn.style.display = 'block';
-                nextBtn.style.display = 'block';
+                if (prevBtn) prevBtn.style.display = 'block';
+                if (nextBtn) nextBtn.style.display = 'block';
+                if (counter) {
+                    counter.style.display = 'block';
+                    counter.innerText = `${currentSlideIndex + 1} / ${currentDetailMedia.length}`;
+                }
             }
-        }
-
-        function closeDetailModal() {
-            const videos = document.querySelectorAll('.gallery-slide');
-            videos.forEach(v => {
-                if (v.tagName === 'VIDEO') v.pause();
-            });
-            document.getElementById('detail-modal').style.display = 'none';
-        }
-
-        async function handleLogin(e) {
-            e.preventDefault();
-            const email = document.getElementById('login-email').value;
-            const password = document.getElementById('login-pass').value;
-
-            const { data, error } = await _supabase.auth.signInWithPassword({ email, password });
-            if (error) {
-                alert('خطأ في البيانات: ' + error.message);
-            } else {
-                currentUser = data.user;
-                closeLoginModal();
-                updateUIForAuthStatus();
-                fetchAndRenderAll();
-            }
-        }
-
-        async function handleLogout() {
-            await _supabase.auth.signOut();
-            currentUser = null;
-            updateUIForAuthStatus();
-            fetchAndRenderAll();
         }
 
         function copyWallet() {
             const num = document.getElementById('wallet-num').innerText;
-            navigator.clipboard.writeText(num);
-            alert('تم نسخ رقم المحفظة بنجاح: ' + num);
+            navigator.clipboard.writeText(num).then(() => {
+                alert('تم نسخ رقم المحفظة بنجاح: ' + num);
+            }).catch(err => {
+                alert('تعذر النسخ تلقائياً.');
+            });
         }
     </script>
 </body>

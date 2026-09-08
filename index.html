@@ -295,6 +295,70 @@
             border: 1px solid var(--accent-gold);
         }
 
+        /* تنسيق دائرة النسبة المئوية فوق الصورة */
+        .progress-circle-badge {
+            position: absolute;
+            bottom: 12px;
+            left: 12px;
+            background: rgba(27, 59, 43, 0.9);
+            border: 2px solid var(--accent-gold);
+            border-radius: 50%;
+            width: 58px;
+            height: 58px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        .progress-circle-badge .percent {
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: var(--accent-gold);
+            line-height: 1;
+        }
+
+        .progress-circle-badge .label {
+            font-size: 0.55rem;
+            opacity: 0.9;
+            margin-top: 2px;
+        }
+
+        /* شريط التجميع المالي داخل الكارت */
+        .funding-progress-box {
+            margin-top: 10px;
+            padding: 10px;
+            background: var(--light-gold);
+            border-radius: 8px;
+            border: 1px solid rgba(197, 160, 89, 0.3);
+        }
+
+        .funding-stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: var(--primary-green);
+            margin-bottom: 6px;
+        }
+
+        .progress-bar-bg {
+            width: 100%;
+            height: 8px;
+            background-color: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--gold-border), var(--accent-gold));
+            border-radius: 4px;
+            transition: width 0.5s ease-in-out;
+        }
+
         .admin-card-actions {
             position: absolute;
             top: 12px;
@@ -571,10 +635,14 @@
                 <input type="text" id="item-sub" placeholder="اسم المستشفى أو الجهة المستقبلة" required>
                 
                 <select id="item-status">
-                    <option value="تم التسليم والتوثيق">تم التسليم والتوثيق</option>
                     <option value="قيد التجهيز">قيد التجهيز</option>
+                    <option value="تم التسليم والتوثيق">تم التسليم والتوثيق</option>
                     <option value="قبل التوزيع">قبل التوزيع</option>
                 </select>
+
+                <!-- إدخال الأرقام المالية للنسبة -->
+                <input type="number" id="item-target-amount" placeholder="المبلغ الكلي المطلوب (ج.م)" required min="0">
+                <input type="number" id="item-collected-amount" placeholder="المبلغ المجمع حالياً (ج.م)" value="0" required min="0">
 
                 <div class="file-input-group">
                     <div class="file-input-box">
@@ -620,16 +688,25 @@
     </div>
 
     <div id="edit-status-modal" class="modal">
-        <div class="modal-content" style="max-width: 400px; text-align: center;">
+        <div class="modal-content" style="max-width: 400px;">
             <span class="close-modal" onclick="closeEditStatusModal()">&times;</span>
-            <h3 style="color: var(--primary-green); margin-bottom: 1.2rem; font-family: 'Amiri', serif; font-size: 1.5rem;">تعديل حالة الإنجاز</h3>
+            <h3 style="color: var(--primary-green); margin-bottom: 1.2rem; font-family: 'Amiri', serif; font-size: 1.5rem; text-align: center;">تعديل بيانات الإنجاز</h3>
             <form onsubmit="handleUpdateStatus(event)" style="display: flex; flex-direction: column; gap: 1rem;">
                 <input type="hidden" id="edit-item-id">
-                <select id="edit-item-status" style="padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem;">
+                
+                <label style="font-size:0.85rem; font-weight:bold; color:var(--primary-green);">حالة الإنجاز:</label>
+                <select id="edit-item-status" style="padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.95rem;">
                     <option value="تم التسليم والتوثيق">تم التسليم والتوثيق</option>
                     <option value="قيد التجهيز">قيد التجهيز</option>
                     <option value="قبل التوزيع">قبل التوزيع</option>
                 </select>
+
+                <label style="font-size:0.85rem; font-weight:bold; color:var(--primary-green);">المبلغ المطلوب الكلي (ج.م):</label>
+                <input type="number" id="edit-item-target" style="padding: 10px; border: 1px solid #ccc; border-radius: 6px;" min="0">
+
+                <label style="font-size:0.85rem; font-weight:bold; color:var(--primary-green);">المبلغ المتجمع حالياً (ج.م):</label>
+                <input type="number" id="edit-item-collected" style="padding: 10px; border: 1px solid #ccc; border-radius: 6px;" min="0">
+
                 <button type="submit" id="btn-update-status" class="btn-submit">حفظ التغييرات</button>
             </form>
         </div>
@@ -738,6 +815,14 @@
                 const mainImg = item.main_image_url || item.image_url;
                 const hospitalName = item.hospital || item.sub_title || item.subtitle || item.location || 'غير محدد';
 
+                // حساب النسبة المئوية
+                const target = item.target_amount || 0;
+                const collected = item.collected_amount || 0;
+                let percentage = 0;
+                if (target > 0) {
+                    percentage = Math.min(Math.round((collected / target) * 100), 100);
+                }
+
                 let detailMedia = item.detail_images_urls || [];
                 if (item.detail_videos_urls && item.detail_videos_urls.length > 0) {
                     detailMedia = detailMedia.concat(item.detail_videos_urls);
@@ -756,7 +841,7 @@
                 if (currentUser) {
                     adminButtonsHTML = `
                         <div class="admin-card-actions">
-                            <button id="btn-edit-${item.id}" class="btn-edit-card"><i class="fa-solid fa-pen"></i> تعديل الحالة</button>
+                            <button id="btn-edit-${item.id}" class="btn-edit-card"><i class="fa-solid fa-pen"></i> تعديل</button>
                             <button id="btn-del-${item.id}" class="btn-delete-card"><i class="fa-solid fa-trash"></i> حذف</button>
                         </div>
                     `;
@@ -768,11 +853,27 @@
                         <div class="card-img-container">
                             <img src="${mainImg}" alt="${item.title}" class="card-img">
                             <span class="badge">${item.status || 'تم التسليم والتوثيق'}</span>
+                            <div class="progress-circle-badge">
+                                <span class="percent">${percentage}%</span>
+                                <span class="label">مكتمل</span>
+                            </div>
                         </div>
                         <div class="card-content">
                             <h3>${item.title}</h3>
                             <p><i class="fa-solid fa-hospital"></i> ${hospitalName}</p>
-                            <p style="font-size:0.85rem; color:#777; font-style:italic;">
+                            
+                            <!-- شريط النسبة والمبلغ -->
+                            <div class="funding-progress-box">
+                                <div class="funding-stats">
+                                    <span>المجموع: ${collected.toLocaleString()} ج.م</span>
+                                    <span>الهدف: ${target.toLocaleString()} ج.م</span>
+                                </div>
+                                <div class="progress-bar-bg">
+                                    <div class="progress-bar-fill" style="width: ${percentage}%;"></div>
+                                </div>
+                            </div>
+
+                            <p style="font-size:0.85rem; color:#777; font-style:italic; margin-top:10px;">
                                 <i class="fa-solid fa-photo-film"></i> اضغط لرؤية التفاصيل والتغطية (${detailMedia.length})
                             </p>
                             <span class="added-by"><i class="fa-solid fa-user"></i> بواسطة: ${item.added_by || 'أدمن وسيلة'}</span>
@@ -795,7 +896,7 @@
                     if (editBtn) {
                         editBtn.addEventListener('click', (e) => {
                             e.stopPropagation();
-                            openEditStatusModal(item.id, item.status || 'تم التسليم والتوثيق');
+                            openEditStatusModal(item.id, item.status || 'تم التسليم والتوثيق', target, collected);
                         });
                     }
                 }
@@ -813,9 +914,11 @@
             });
         }
 
-        function openEditStatusModal(id, currentStatus) {
+        function openEditStatusModal(id, currentStatus, target, collected) {
             document.getElementById('edit-item-id').value = id;
             document.getElementById('edit-item-status').value = currentStatus;
+            document.getElementById('edit-item-target').value = target || 0;
+            document.getElementById('edit-item-collected').value = collected || 0;
             document.getElementById('edit-status-modal').style.display = 'flex';
         }
 
@@ -827,24 +930,30 @@
             e.preventDefault();
             const id = document.getElementById('edit-item-id').value;
             const newStatus = document.getElementById('edit-item-status').value;
-            const submitBtn = document.getElementById('btn-update-status');
+            const newTarget = document.getElementById('edit-item-target').value;
+            const newCollected = document.getElementById('edit-item-collected').value;
 
+            const submitBtn = document.getElementById('btn-update-status');
             submitBtn.innerText = 'جاري التحديث...';
             submitBtn.disabled = true;
 
             try {
                 const { error } = await _supabase
                     .from('equipment')
-                    .update({ status: newStatus })
+                    .update({ 
+                        status: newStatus,
+                        target_amount: Number(newTarget),
+                        collected_amount: Number(newCollected)
+                    })
                     .eq('id', String(id));
 
                 if (error) throw error;
 
-                alert('تم تحديث الحالة بنجاح!');
+                alert('تم التحديث بنجاح!');
                 closeEditStatusModal();
                 fetchAndRenderAll();
             } catch (err) {
-                alert('حدث خطأ أثناء تحديث الحالة: ' + err.message);
+                alert('حدث خطأ أثناء التحديث: ' + err.message);
             } finally {
                 submitBtn.innerText = 'حفظ التغييرات';
                 submitBtn.disabled = false;
@@ -862,6 +971,8 @@
                 const title = document.getElementById('item-title').value;
                 const sub = document.getElementById('item-sub').value;
                 const status = document.getElementById('item-status').value;
+                const targetAmount = document.getElementById('item-target-amount').value;
+                const collectedAmount = document.getElementById('item-collected-amount').value;
                 const desc = document.getElementById('item-desc').value;
 
                 const mainFile = document.getElementById('item-main-image').files[0];
@@ -893,6 +1004,8 @@
                     title: title,
                     hospital: sub,
                     status: status,
+                    target_amount: Number(targetAmount),
+                    collected_amount: Number(collectedAmount),
                     description: desc,
                     added_by: addedBy,
                     main_image_url: mainUrl,

@@ -27,6 +27,7 @@
             --text-dark: #1F2D24;
             --text-muted: #55605A;
             --danger-red: #d9534f;
+            --edit-blue: #0275d8;
         }
 
         * {
@@ -294,25 +295,41 @@
             border: 1px solid var(--accent-gold);
         }
 
-        .btn-delete-card {
+        .admin-card-actions {
             position: absolute;
             top: 12px;
             left: 12px;
+            display: flex;
+            gap: 6px;
+            z-index: 100;
+        }
+
+        .btn-delete-card {
             background-color: var(--danger-red);
             color: white;
             border: none;
-            padding: 6px 12px;
+            padding: 6px 10px;
             border-radius: 8px;
             cursor: pointer;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             font-weight: bold;
-            z-index: 100;
             box-shadow: 0 2px 6px rgba(0,0,0,0.3);
         }
 
-        .btn-delete-card:hover {
-            background-color: #c9302c;
+        .btn-edit-card {
+            background-color: var(--edit-blue);
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: bold;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
         }
+
+        .btn-delete-card:hover { background-color: #c9302c; }
+        .btn-edit-card:hover { background-color: #025aa5; }
 
         .card-content {
             padding: 1.5rem;
@@ -602,6 +619,22 @@
         </div>
     </div>
 
+    <div id="edit-status-modal" class="modal">
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
+            <span class="close-modal" onclick="closeEditStatusModal()">&times;</span>
+            <h3 style="color: var(--primary-green); margin-bottom: 1.2rem; font-family: 'Amiri', serif; font-size: 1.5rem;">تعديل حالة الإنجاز</h3>
+            <form onsubmit="handleUpdateStatus(event)" style="display: flex; flex-direction: column; gap: 1rem;">
+                <input type="hidden" id="edit-item-id">
+                <select id="edit-item-status" style="padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem;">
+                    <option value="تم التسليم والتوثيق">تم التسليم والتوثيق</option>
+                    <option value="قيد التجهيز">قيد التجهيز</option>
+                    <option value="قبل التوزيع">قبل التوزيع</option>
+                </select>
+                <button type="submit" id="btn-update-status" class="btn-submit">حفظ التغييرات</button>
+            </form>
+        </div>
+    </div>
+
     <div id="detail-modal" class="modal">
         <div class="modal-content">
             <span class="close-modal" onclick="closeDetailModal()">&times;</span>
@@ -719,13 +752,18 @@
                 const card = document.createElement('div');
                 card.className = 'card';
                 
-                let deleteButtonHTML = '';
+                let adminButtonsHTML = '';
                 if (currentUser) {
-                    deleteButtonHTML = `<button id="btn-del-${item.id}" class="btn-delete-card"><i class="fa-solid fa-trash"></i> حذف</button>`;
+                    adminButtonsHTML = `
+                        <div class="admin-card-actions">
+                            <button id="btn-edit-${item.id}" class="btn-edit-card"><i class="fa-solid fa-pen"></i> تعديل الحالة</button>
+                            <button id="btn-del-${item.id}" class="btn-delete-card"><i class="fa-solid fa-trash"></i> حذف</button>
+                        </div>
+                    `;
                 }
 
                 card.innerHTML = `
-                    ${deleteButtonHTML}
+                    ${adminButtonsHTML}
                     <div class="card-clickable">
                         <div class="card-img-container">
                             <img src="${mainImg}" alt="${item.title}" class="card-img">
@@ -752,6 +790,14 @@
                             deleteEquipment(item.id);
                         });
                     }
+
+                    const editBtn = card.querySelector(`#btn-edit-${item.id}`);
+                    if (editBtn) {
+                        editBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            openEditStatusModal(item.id, item.status || 'تم التسليم والتوثيق');
+                        });
+                    }
                 }
 
                 const clickableArea = card.querySelector('.card-clickable');
@@ -765,6 +811,44 @@
                     });
                 });
             });
+        }
+
+        function openEditStatusModal(id, currentStatus) {
+            document.getElementById('edit-item-id').value = id;
+            document.getElementById('edit-item-status').value = currentStatus;
+            document.getElementById('edit-status-modal').style.display = 'flex';
+        }
+
+        function closeEditStatusModal() {
+            document.getElementById('edit-status-modal').style.display = 'none';
+        }
+
+        async function handleUpdateStatus(e) {
+            e.preventDefault();
+            const id = document.getElementById('edit-item-id').value;
+            const newStatus = document.getElementById('edit-item-status').value;
+            const submitBtn = document.getElementById('btn-update-status');
+
+            submitBtn.innerText = 'جاري التحديث...';
+            submitBtn.disabled = true;
+
+            try {
+                const { error } = await _supabase
+                    .from('equipment')
+                    .update({ status: newStatus })
+                    .eq('id', String(id));
+
+                if (error) throw error;
+
+                alert('تم تحديث الحالة بنجاح!');
+                closeEditStatusModal();
+                fetchAndRenderAll();
+            } catch (err) {
+                alert('حدث خطأ أثناء تحديث الحالة: ' + err.message);
+            } finally {
+                submitBtn.innerText = 'حفظ التغييرات';
+                submitBtn.disabled = false;
+            }
         }
 
         async function handleAddItem(e) {
@@ -909,7 +993,6 @@
                     } else {
                         el = document.createElement('img');
                         el.src = url;
-                        el.alt = data.title;
                     }
                     el.className = 'gallery-slide' + (idx === 0 ? ' active' : '');
                     slidesContainer.appendChild(el);
@@ -921,46 +1004,39 @@
         }
 
         function changeSlide(direction) {
-            if (currentDetailMedia.length <= 1) return;
+            if (currentDetailMedia.length === 0) return;
+            currentSlideIndex += direction;
+            if (currentSlideIndex >= currentDetailMedia.length) currentSlideIndex = 0;
+            if (currentSlideIndex < 0) currentSlideIndex = currentDetailMedia.length - 1;
 
             const slides = document.querySelectorAll('.gallery-slide');
-            if (slides.length === 0) return;
+            slides.forEach((slide, idx) => {
+                if (idx === currentSlideIndex) {
+                    slide.classList.add('active');
+                } else {
+                    slide.classList.remove('active');
+                    if (slide.tagName.toLowerCase() === 'video') {
+                        slide.pause();
+                    }
+                }
+            });
 
-            if (slides[currentSlideIndex].tagName.toLowerCase() === 'video') {
-                slides[currentSlideIndex].pause();
-            }
-
-            slides[currentSlideIndex].classList.remove('active');
-            
-            currentSlideIndex = (currentSlideIndex + direction + slides.length) % slides.length;
-            
-            slides[currentSlideIndex].classList.add('active');
             updateGalleryUI();
         }
 
         function updateGalleryUI() {
             const counter = document.getElementById('gallery-counter');
-            const total = currentDetailMedia.length;
-            counter.innerText = total > 0 ? `${currentSlideIndex + 1} / ${total}` : '0 / 0';
-
-            const prevBtn = document.querySelector('.gallery-btn.prev');
-            const nextBtn = document.querySelector('.gallery-btn.next');
-
-            if (total <= 1) {
-                if (prevBtn) prevBtn.style.display = 'none';
-                if (nextBtn) nextBtn.style.display = 'none';
+            if (currentDetailMedia.length === 0) {
+                counter.innerText = '0 / 0';
             } else {
-                if (prevBtn) prevBtn.style.display = 'block';
-                if (nextBtn) nextBtn.style.display = 'block';
+                counter.innerText = (currentSlideIndex + 1) + ' / ' + currentDetailMedia.length;
             }
         }
 
         function copyWallet() {
-            const numText = document.getElementById('wallet-num').innerText;
-            navigator.clipboard.writeText(numText).then(() => {
-                alert('تم نسخ رقم المحفظة بنجاح: ' + numText);
-            }).catch(err => {
-                alert('تعذر النسخ: ' + err);
+            const num = document.getElementById('wallet-num').innerText;
+            navigator.clipboard.writeText(num).then(() => {
+                alert('تم نسخ رقم المحفظة بنجاح!');
             });
         }
     </script>

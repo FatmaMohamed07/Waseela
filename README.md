@@ -133,6 +133,12 @@ The project uses **Supabase** for:
 
 The goal of **Waseela** is to make charitable work more organized and transparent by documenting donated equipment and supplies and showing their progress and supporting media in one accessible platform.
 
+## 🌐 Live Website
+
+If you would like to explore the project and see how it works:
+
+**[Visit Waseela Website](https://waseela-nu.vercel.app/)**
+
 ---
 
 ## About the Project
